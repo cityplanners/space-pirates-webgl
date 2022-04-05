@@ -6,6 +6,10 @@
 
 <script>
 import * as three from "three"
+import { FirstPersonControls } from './controls/FirstPersonControls.js'
+
+let controls;
+const clock = new three.Clock();
 
 export default {
   name: 'WebGLCanvas',
@@ -28,8 +32,12 @@ export default {
   methods: {
     init: function() {
         let container = document.getElementById('canvas');
-        this.camera = new three.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
+        this.camera = new three.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.001, 100 );
         this.camera.position.z = 1;
+
+        this.camera.position.set( 0, 0, 2 );
+				this.camera.lookAt( 0, 0, 0 );
+
         this.scene = new three.Scene();
         console.log(this.boxDimensions.x + " " + this.boxDimensions.y + " " + this.boxDimensions.z );
         this.geometry = new three.BoxGeometry( this.boxDimensions.x, this.boxDimensions.y, this.boxDimensions.z );
@@ -37,7 +45,14 @@ export default {
         this.mesh = new three.Mesh( this.geometry, this.material );
         this.scene.add( this.mesh );
         this.renderer = new three.WebGLRenderer( { antialias: true } );
-        this.renderer.setSize( container.clientWidth, container.clientHeight );
+        //this.renderer.setSize( container.clientWidth, container.clientHeight );
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
+
+        // Attach movement controls to camera
+        controls = new FirstPersonControls( this.camera, this.renderer.domElement );
+				controls.movementSpeed = .1;
+				controls.lookSpeed = 0.2;
+
         container.appendChild( this.renderer.domElement );
     },
     resizeCanvasToDisplaySize: function() {
@@ -53,9 +68,17 @@ export default {
         this.camera.updateProjectionMatrix();
         // update any render target sizes here
       }
+
+      controls.handleResize();
+    },
+    render: function() {
+        controls.update( clock.getDelta() );
+        this.renderer.render( this.scene, this.camera );
     },
     animate: function() {
         requestAnimationFrame( this.animate );
+        
+        // Update
         //this.resizeCanvasToDisplaySize();
         this.mesh.rotation.x += 0.01;
         this.mesh.rotation.y += 0.02;
@@ -63,7 +86,8 @@ export default {
         // this.mesh.geometry.parameters.depth = this.boxDimensions.z;
         // this.mesh.geometry.parameters.width = this.boxDimensions.x;
         // this.mesh.geometry.parameters.height = this.boxDimensions.y;
-        this.renderer.render( this.scene, this.camera );
+
+        this.render();
     },
     sendRequest() {
       console.log('Click!');
