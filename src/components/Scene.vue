@@ -1,4 +1,5 @@
 <template>
+  <button @click="sendRequest">Click me!</button>
   <div id="canvas">
   </div>
 </template>
@@ -11,6 +12,15 @@ export default {
   props: {
     msg: String
   },
+  data() {
+    return {
+      boxDimensions: {
+        x: 0.2,
+        y: 0.2,
+        z: 0.2
+      }
+    }
+  },
   mounted() {
     this.init();
     this.animate();
@@ -21,7 +31,8 @@ export default {
         this.camera = new three.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 10 );
         this.camera.position.z = 1;
         this.scene = new three.Scene();
-        this.geometry = new three.BoxGeometry( 0.2, 0.2, 0.2 );
+        console.log(this.boxDimensions.x + " " + this.boxDimensions.y + " " + this.boxDimensions.z );
+        this.geometry = new three.BoxGeometry( this.boxDimensions.x, this.boxDimensions.y, this.boxDimensions.z );
         this.material = new three.MeshNormalMaterial();
         this.mesh = new three.Mesh( this.geometry, this.material );
         this.scene.add( this.mesh );
@@ -34,7 +45,6 @@ export default {
       // look up the size the canvas is being displayed
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
-      //console.log("width: " + canvas.width + ", height: " + canvas.height);
       // adjust displayBuffer size to match
       if (canvas.width !== width || canvas.height !== height) {
         // you must pass false here or three.js sadly fights the browser
@@ -49,7 +59,27 @@ export default {
         //this.resizeCanvasToDisplaySize();
         this.mesh.rotation.x += 0.01;
         this.mesh.rotation.y += 0.02;
+        // update box size or whatever (PoC)
+        // this.mesh.geometry.parameters.depth = this.boxDimensions.z;
+        // this.mesh.geometry.parameters.width = this.boxDimensions.x;
+        // this.mesh.geometry.parameters.height = this.boxDimensions.y;
         this.renderer.render( this.scene, this.camera );
+    },
+    sendRequest() {
+      console.log('Click!');
+      // Request box dimensions from server
+      // Simple POST request with a JSON body using fetch
+      const requestOptions = {
+        method: "GET",
+        mode: 'cors',
+        headers: { "Content-Type": "application/json" }
+      };
+      fetch("http://localhost:8080/cubeDimensions", requestOptions)
+        .then(response => response.json())
+        .then(data => {
+          console.log('assign data: ' + data);
+          this.boxDimensions = data.dimensions;
+        });
     }
   }
 }
